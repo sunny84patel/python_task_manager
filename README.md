@@ -34,7 +34,7 @@ cd task-manager-ui
 ```
 2. **Install Dependencies**
 ```bash
-pip install requirements.yxt
+pip install requirements.txt
 
 ```
 3. **Run the Application**
