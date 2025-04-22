@@ -31,3 +31,6 @@ A simple Flask-based Task Manager API with a lightweight frontend interface to c
 ```bash
 git clone https://github.com/your-username/task-manager-ui.git
 cd task-manager-ui
+
+2. **Install Dependencies
+
