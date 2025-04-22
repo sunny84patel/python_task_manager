@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Unix-Inspired Task Manager</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>🧠 Task Manager</h1>
+
+    <form id="taskForm">
+      <input type="text" id="taskName" placeholder="Enter task name" required>
+      <button type="submit">Create Task</button>
+    </form>
+
+    <form id="viewTaskForm">
+      <input type="number" id="taskIdInput" placeholder="Enter Task ID to View" required>
+      <button type="submit">View Task</button>
+    </form>
+
+    <div id="message"></div>
+    <div id="singleTaskDetails"></div>
+
+    <h2>📋 Current Tasks</h2>
+    <ul id="taskList"></ul>
+  </div>
+
+  <script>
+    async function loadTasks() {
+      const res = await fetch('/tasks');
+      const tasks = await res.json();
+      const taskList = document.getElementById('taskList');
+      taskList.innerHTML = '';
+
+      if (tasks.length === 0) {
+        taskList.innerHTML = '<li>No tasks found.</li>';
+        return;
+      }
+
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <strong>#${task.id}</strong>: ${task.name} — 
+          <span class="status">${task.status}</span> 
+          <span class="time">[${new Date(task.created_at).toLocaleString()}]</span>
+          <button onclick="deleteTask(${task.id})" class="delete-btn">🗑️</button>`;
+        taskList.appendChild(li);
+      });
+    }
+
+    async function deleteTask(id) {
+      const res = await fetch(`/tasks/${id}`, { method: 'DELETE' });
+      const msg = document.getElementById('message');
+      const data = await res.json();
+      msg.textContent = data.message || data.error;
+      loadTasks();
+      setTimeout(() => msg.textContent = '', 3000);
+    }
+
+    document.getElementById('taskForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const taskName = document.getElementById('taskName').value;
+      const res = await fetch('/tasks', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name: taskName })
+      });
+
+      const msg = document.getElementById('message');
+      const data = await res.json();
+      if (res.status === 201) {
+        msg.textContent = `✅ Created: #${data.id} ${data.name}`;
+        document.getElementById('taskName').value = '';
+        loadTasks();
+      } else {
+        msg.textContent = `❌ ${data.error}`;
+      }
+      setTimeout(() => msg.textContent = '', 3000);
+    });
+
+    document.getElementById('viewTaskForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const taskId = document.getElementById('taskIdInput').value;
+      const res = await fetch(`/tasks/${taskId}`);
+      const data = await res.json();
+      const details = document.getElementById('singleTaskDetails');
+      if (res.status === 200) {
+        details.innerHTML = `
+          <h3>📄 Task Details</h3>
+          <p><strong>ID:</strong> ${data.id}</p>
+          <p><strong>Name:</strong> ${data.name}</p>
+          <p><strong>Status:</strong> ${data.status}</p>
+          <p><strong>Created:</strong> ${new Date(data.created_at).toLocaleString()}</p>
+        `;
+      } else {
+        details.innerHTML = `<p class="error">❌ ${data.error}</p>`;
+      }
+    });
+
+    loadTasks();
+  </script>
+</body>
+</html>
